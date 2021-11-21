@@ -10,3 +10,7 @@ Let's say you are sick the following pandoc command `pandoc --toc -s test.md -o 
 ```bash
 ojo test.md -d 2 -x "pandoc --toc -s test.md -o test.html"
 ```
+
+## To-do
+- [ ] Implement a correct argument parser
+- [ ] Implement correct error handling
