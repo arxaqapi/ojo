@@ -1,11 +1,12 @@
 # Ojo
 
-Ojo can watch a certain file and run a command.
+**Ojo** is a simple utility that allows you to execute a specific command each time a certain file is being saved.
 
 ## Usage
-Let's say you wan't to perdiodically check if modifications occured in the file `test.md` and execute the corresponding pandoc command to obtain the wanted `test.html` file.
+Let's say you are sick the following pandoc command `pandoc --toc -s test.md -o test.html` each time you do some minor modifications.
 
-You simply would have to type the following command: 
+**Ojo** Handles this for you, you just have to specify when to watch for modification and the command to execute and voilà !
+
 ```bash
 ojo test.md -d 2 -x "pandoc --toc -s test.md -o test.html"
 ```
