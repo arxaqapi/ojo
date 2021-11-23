@@ -20,9 +20,8 @@ fn parse_args() -> (String, u32, String) {
     let args: Vec<String> = env::args().collect();
 
     if args.len() != 6 || args[2] != "-d" || args[4] != "-x" {
-        eprintln!("Argument count does not match!");
         eprintln!("Usage: ojo <file> -d <delay> -x \"command\"\n");
-        panic!();
+        panic!("Argument count does not match!");
     }
 
     let towatch = args[1].clone();
@@ -73,3 +72,7 @@ fn main() {
 
     ojo(tuple.0, tuple.1, tuple.2);
 }
+
+#[cfg(test)]
+#[path = "./tests/main_tests.rs"]
+mod foo_test;
