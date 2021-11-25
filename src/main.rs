@@ -4,16 +4,24 @@ use std::process::Command;
 use std::{thread, time};
 
 fn spawn_new(command: String) {
+    assert_eq!(cfg!(target_os = "linux"), true);
+
     let sub_args: Vec<&str> = command.split(' ').collect();
 
-    assert_eq!(cfg!(target_os = "linux"), true);
-    let _output = Command::new(sub_args[0])
-        .args(&sub_args[1..])
-        .output()
-        .expect(&format!("Could not execute: {}", command));
+    let mut process = Command::new(sub_args[0]);
 
-    println!("\tstdout: {:?}", String::from_utf8(_output.stdout).unwrap());
-    println!("\tstderr: {:?}", String::from_utf8(_output.stderr).unwrap());
+    let output = match sub_args.len() > 1 {
+        true => {
+            process.args(&sub_args[1..])
+        },
+        _ => {
+            &mut process
+        }
+    }.output().expect(&format!("Could not execute: {}", command));
+
+
+    println!("\tstdout: {:?}", String::from_utf8(output.stdout).unwrap());
+    println!("\tstderr: {:?}", String::from_utf8(output.stderr).unwrap());
 }
 
 fn parse_args() -> (String, u32, String) {
@@ -54,16 +62,6 @@ fn ojo(file: String, delay: u32, command: String) {
             time_buffer = new;
         }
     }
-    // match metadata.modified() {
-    //     Ok(time) => {
-    //         // duration_since(new)
-    //         println!("Time: {:?}", time);
-    //     },
-    //     Err(e) => {
-    //         eprintln!("Error: {}", e);
-    //     }
-    // }
-    // println!("secs: {:?}", time_buffer)
 }
 
 fn main() {
