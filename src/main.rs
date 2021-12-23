@@ -3,6 +3,27 @@ use std::fs;
 use std::process::Command;
 use std::{thread, time};
 
+use clap::Parser;
+
+/// ojo is a command line tool that watches periodically for modification in the specified file
+/// and executes a certain command
+#[derive(Parser, Debug)]
+#[clap(about, version, author = "arxaqapi. <github.com/arxaqapi>")]
+struct Args {
+    /// File input
+    #[clap(index = 1, required = true)]
+    filename: String,
+
+    /// Delay between each patrol in seconds
+    #[clap(short, long, default_value_t = 2)]
+    delay: u32,
+
+    /// Command to execute
+    #[clap(short = 'x', long = "execute")]
+    command: String,
+}
+
+
 fn spawn_new(command: String) {
     assert_eq!(cfg!(target_os = "linux"), true);
 
@@ -24,20 +45,6 @@ fn spawn_new(command: String) {
     println!("\tstderr: {:?}", String::from_utf8(output.stderr).unwrap());
 }
 
-fn parse_args() -> (String, u32, String) {
-    let args: Vec<String> = env::args().collect();
-
-    if args.len() != 6 || args[2] != "-d" || args[4] != "-x" {
-        eprintln!("Usage: ojo <file> -d <delay> -x \"command\"\n");
-        panic!("Argument count does not match!");
-    }
-
-    let towatch = args[1].clone();
-    let d: u32 = args[3].parse::<u32>().unwrap();
-    let command: String = args[5].clone();
-
-    return (towatch, d, command);
-}
 
 fn ojo(file: String, delay: u32, command: String) {
     println!("👁️  Ojo is watching: {}", file);
@@ -56,7 +63,7 @@ fn ojo(file: String, delay: u32, command: String) {
         let new = metadata.modified().unwrap();
         // 3. Compare to old one
         if new > time_buffer {
-            println!("Modification detected at <time::now>!");
+            println!("\u{1F6D1} Modification detected at <time::now>!");
             // 3.2 execute command
             spawn_new(command.clone());
             time_buffer = new;
@@ -65,10 +72,9 @@ fn ojo(file: String, delay: u32, command: String) {
 }
 
 fn main() {
-    
-    let tuple = parse_args();
+    let args = Args::parse();
 
-    ojo(tuple.0, tuple.1, tuple.2);
+    ojo(args.filename, args.delay, args.command);
 }
 
 #[cfg(test)]
