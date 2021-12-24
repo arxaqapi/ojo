@@ -1,9 +1,10 @@
-use std::env;
 use std::fs;
 use std::process::Command;
 use std::{thread, time};
 
 use clap::Parser;
+use chrono::{Local, Timelike};
+use colored::*;
 
 /// ojo is a command line tool that watches periodically for modification in the specified file
 /// and executes a certain command
@@ -21,10 +22,15 @@ struct Args {
     /// Command to execute
     #[clap(short = 'x', long = "execute")]
     command: String,
+
+    /// Set the levels of verbosity (0 means no output from subprocesses)
+    #[clap(short, long, default_value_t = 1)]
+    verbose: u8,
+
 }
 
 
-fn spawn_new(command: String) {
+fn spawn_new(command: String, verbose: u8) {
     assert_eq!(cfg!(target_os = "linux"), true);
 
     let sub_args: Vec<&str> = command.split(' ').collect();
@@ -40,16 +46,23 @@ fn spawn_new(command: String) {
         }
     }.output().expect(&format!("Could not execute: {}", command));
 
-
-    println!("\tstdout: {:?}", String::from_utf8(output.stdout).unwrap());
-    println!("\tstderr: {:?}", String::from_utf8(output.stderr).unwrap());
+    if verbose == 1 {
+        let stdout = String::from_utf8(output.stdout).unwrap();
+        let stderr = String::from_utf8(output.stderr).unwrap();
+        if !stdout.is_empty() {
+            println!("{}", stdout.green())
+        }
+        if !stderr.is_empty() {
+            println!("{}", stderr.red())
+        }
+    }
 }
 
 
-fn ojo(file: String, delay: u32, command: String) {
-    println!("👁️  Ojo is watching: {}", file);
+fn ojo(args: Args) { //file: String, delay: u32, command: String) {
+    println!("👁️  Ojo is watching: {}", args.filename);
 
-    let mut metadata = fs::metadata(&file).unwrap();
+    let mut metadata = fs::metadata(&args.filename).unwrap();
     assert_eq!(metadata.is_file(), true);
 
     // NOTE: modification time at start
@@ -57,24 +70,25 @@ fn ojo(file: String, delay: u32, command: String) {
 
     loop {
         // 1. Sleep
-        thread::sleep(time::Duration::from_secs(delay as u64));
+        thread::sleep(time::Duration::from_secs(args.delay as u64));
         // 2. Get new metadata
-        metadata = fs::metadata(&file).unwrap();
+        metadata = fs::metadata(&args.filename).unwrap();
         let new = metadata.modified().unwrap();
         // 3. Compare to old one
         if new > time_buffer {
-            println!("\u{1F6D1} Modification detected at <time::now>!");
+            let now = Local::now();
+            println!("❗️ Modification detected at {:02}:{:02}:{:02} !", now.hour(), now.minute(), now.second());
             // 3.2 execute command
-            spawn_new(command.clone());
+            spawn_new(args.command.clone(), args.verbose.clone());
             time_buffer = new;
         }
     }
 }
 
 fn main() {
-    let args = Args::parse();
 
-    ojo(args.filename, args.delay, args.command);
+    let args = Args::parse();
+    ojo(args); 
 }
 
 #[cfg(test)]
