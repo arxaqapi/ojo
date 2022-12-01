@@ -1,0 +1,3 @@
+(test
+ (name ojo_tests)
+ (libraries ojo_lib))

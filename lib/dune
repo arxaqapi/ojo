@@ -1,0 +1,3 @@
+(library
+ (name ojo_lib)
+ (libraries unix))

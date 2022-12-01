@@ -1,0 +1,4 @@
+(executable
+ (public_name ojo)
+ (name main)
+ (libraries ojo_lib unix))

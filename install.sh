@@ -1,7 +1,7 @@
 bin_name="ojo"
 install_path=".local/bin"
 
-cargo build --release
+# cargo build --release
 
 if [ -f ~/${install_path}/${bin_name} ]; then
     echo "ojo already exists in" ${install_path}
