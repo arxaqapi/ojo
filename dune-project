@@ -13,14 +13,14 @@
 
 (license LICENSE)
 
-(documentation https://url/to/documentation)
+(documentation https://github.com/arxaqapi/ojo)
 
 (package
  (name ojo)
- (synopsis "A short synopsis")
+ (synopsis "ojo executes a specific command each time a specific file is modified.")
  (description "A longer description")
  (depends ocaml dune)
  (tags
-  (topics "to describe" your project)))
+  ()))
 
 ; See the complete stanza docs at https://dune.readthedocs.io/en/stable/dune-files.html#dune-project
