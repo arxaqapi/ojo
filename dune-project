@@ -11,7 +11,7 @@
 
 (maintainers "arxaqapi")
 
-(license LICENSE)
+(license MIT)
 
 (documentation https://github.com/arxaqapi/ojo)
 

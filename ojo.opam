@@ -5,7 +5,7 @@ synopsis:
 description: "A longer description"
 maintainer: ["arxaqapi"]
 authors: ["arxaqapi"]
-license: "LICENSE"
+license: "MIT"
 homepage: "https://github.com/arxaqapi/ojo"
 doc: "https://github.com/arxaqapi/ojo"
 bug-reports: "https://github.com/arxaqapi/ojo/issues"
