@@ -1,7 +1,7 @@
 bin_name="ojo"
 install_path=".local/bin"
 
-dune build
+make
 
 if [ -f ~/${install_path}/${bin_name} ]; then
     echo "ojo already exists in" ${install_path}
