@@ -13,7 +13,8 @@ $(BIN):
 
 t test: b
 	dune test
-.PHONY: clean
+
+.PHONY: c clean
 c clean:	
 	@rm -rf _build/
 	@rm -rf $(BIN)

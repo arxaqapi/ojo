@@ -17,9 +17,9 @@
 
 (package
  (name ojo)
- (synopsis "ojo executes a specific command each time a specific file is modified.")
- (description "A longer description")
- (depends ocaml dune)
+ (synopsis "CLI tool to watch for change in the specified files.")
+ (description "Ojo is a CLI toot that executes a given command each time a specified file or directory content is modified.")
+ (depends (ocaml (>= 4.14)) dune)
  (tags
   ()))
 

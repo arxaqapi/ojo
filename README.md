@@ -1,6 +1,6 @@
 # Ojo
 
-**Ojo** is a simple utility that allows you to execute a specific command each time the specified file is being modified.
+**Ojo** is a simple CLI tool that allows you to execute a specific command each time the specified file or directory is being modified.
 
 ## Usage
 Let's say that you are sick of running the following pandoc command `pandoc --toc -s test.md -o test.html` each time you do some minor modifications to your `test.md` file.
