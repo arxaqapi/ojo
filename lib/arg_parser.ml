@@ -28,4 +28,3 @@ let parse_arguments () =
       exit 1
   | _ -> (!delay, !command, Queue.peek files_to_watch)
 (* Returns only the first file to watch, v0.2 will handle multiple files and directories *)
-
