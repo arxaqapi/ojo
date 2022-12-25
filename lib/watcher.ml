@@ -41,8 +41,6 @@ module Dir = struct
     files : (string, FileData.t) Hashtbl.t;
   }
 
-  (* NOTE: make function cleaner and better? *)
-
   (** Creates a Dir structure and populates its internal list corresponding to the [path] parameter *)
   let make ?(max_depth = 3) path =
     let files = Hashtbl.create 10 in
@@ -85,14 +83,15 @@ module Dir = struct
 end
 
 (** Watch for modifications in a specific path (file or directory) *)
-let watch_path path delay f =
+let watch_path path delay max_depth f =
   (* NOTE: remove duplicate code *)
   (match Sys.is_directory path with
   | true ->
-      Rainbow.print Yellow @@ "Watching for modification in directory: " ^ path
+      Rainbow.print Yellow @@ "Watching for modification in directory (depth="
+      ^ string_of_int max_depth ^ "): " ^ path
   | false ->
       Rainbow.print Yellow @@ "Watching for modification in file: " ^ path);
-  let d = Dir.make path in
+  let d = Dir.make ~max_depth path in
   let rec watch_process () =
     Unix.sleepf delay;
     if Dir.files_have_been_modified d then (

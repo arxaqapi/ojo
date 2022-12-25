@@ -1,8 +1,10 @@
 open Ojo_lib
 
 let () =
-  let delay, command, path_to_watch = Arg_parser.parse_arguments () in
-  Watcher.watch_path path_to_watch delay (fun () ->
+  let delay, command, max_depth, path_to_watch =
+    Arg_parser.parse_arguments ()
+  in
+  Watcher.watch_path path_to_watch delay max_depth (fun () ->
       Rainbow.print Blue "👁  Modifications detected";
       match Shexec.shexec command with
       | WEXITED 0, command_output ->
