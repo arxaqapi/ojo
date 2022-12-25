@@ -1,31 +1,51 @@
 open Utils
 
-let get_modification_time filename = int_of_float (Unix.stat filename).st_mtime
+exception UnixStatError
+exception FileDataError
 
-module File = struct
-  type t = { path : string; mutable last_modification_time : int }
+let get_modification_time filename =
+  try Ok (int_of_float (Unix.stat filename).st_mtime)
+  with Unix.Unix_error _ -> Error UnixStatError
 
-  let get_path f = f.path
-  let make path = { path; last_modification_time = get_modification_time path }
+module FileData = struct
+  type t = { mutable last_modification_time : int }
 
-  let update_modification_time f =
-    f.last_modification_time <- get_modification_time f.path
+  let make_exn path =
+    {
+      last_modification_time =
+        (match get_modification_time path with
+        | Ok i -> i
+        | Error _ -> raise FileDataError);
+    }
+
+  let update_modification_time_exn f path =
+    f.last_modification_time <-
+      (match get_modification_time path with
+      | Ok i -> i
+      | Error _ -> raise FileDataError)
 
   (** Returns true if the file has been modified. The internal last modification time is also updated.*)
-  let has_been_modified f =
-    let b = get_modification_time f.path - f.last_modification_time > 0 in
-    update_modification_time f;
-    b
+  let has_been_modified_exn f path =
+    match get_modification_time path with
+    | Ok time ->
+        let res = time - f.last_modification_time > 0 in
+        update_modification_time_exn f path;
+        res
+    | Error _ -> raise FileDataError
 end
 
 module Dir = struct
-  type t = { path : string; files : File.t Vector.t }
+  type t = {
+    path : string;
+    (* path -> FileData.t *)
+    files : (string, FileData.t) Hashtbl.t;
+  }
 
   (* NOTE: make function cleaner and better? *)
 
   (** Creates a Dir structure and populates its internal list corresponding to the [path] parameter *)
   let make ?(max_depth = 3) path =
-    let files = Vector.make_empty () in
+    let files = Hashtbl.create 10 in
     (* If we have a directory, recursively add all files to the Dir.files record field *)
     (* NOTE: remove duplicate code *)
     if Sys.is_directory path then
@@ -37,23 +57,31 @@ module Dir = struct
               match (Unix.lstat new_path).st_kind with
               | Unix.S_DIR ->
                   explore_tree (pred depth) new_path (* handles a subdir*)
-              | Unix.S_REG -> Vector.push files (File.make new_path)
+              | Unix.S_REG ->
+                  Hashtbl.add files new_path (FileData.make_exn new_path)
               | _ -> () (* Do nothing *))
             (Sys.readdir cur_path)
       in
       explore_tree max_depth path
-    else Vector.push files (File.make path);
+    else Hashtbl.add files path (FileData.make_exn path);
     { path; files }
 
   (** Loop over all files in the specified directory and return true if a modification has been detected *)
   let files_have_been_modified d =
-    (*FIXME - If a file is deleted during the watch time, the program cannot retrieve its stats
-      > handle error and do nothing
-      > OR use another data structure and remove deleted entries
-    *)
-    match Vector.find_opt (fun f -> File.has_been_modified f) d.files with
-    | Some _ -> true
-    | _ -> false
+    let to_remove_q = Queue.create () in
+    let res =
+      Hashtbl.fold
+        (fun k_path f_data b ->
+          (* Handle FileDataError errors *)
+          try FileData.has_been_modified_exn f_data k_path || b
+          with FileDataError ->
+            Queue.push k_path to_remove_q;
+            true || b)
+        d.files false
+    in
+    (* Remove faulty elements in queue from table *)
+    Queue.iter (fun p -> Hashtbl.remove d.files p) to_remove_q;
+    res
 end
 
 (** Watch for modifications in a specific path (file or directory) *)
