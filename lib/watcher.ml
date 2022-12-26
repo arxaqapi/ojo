@@ -1,11 +1,12 @@
 open Utils
 
-exception UnixStatError
-exception FileDataError
+exception Unix_stat_error
+exception Cannot_retrieve_unix_stats
+exception Not_Implemented
 
 let get_modification_time filename =
   try Ok (int_of_float (Unix.stat filename).st_mtime)
-  with Unix.Unix_error _ -> Error UnixStatError
+  with Unix.Unix_error _ -> Error Unix_stat_error
 
 module FileData = struct
   type t = { mutable last_modification_time : int }
@@ -15,24 +16,27 @@ module FileData = struct
       last_modification_time =
         (match get_modification_time path with
         | Ok i -> i
-        | Error _ -> raise FileDataError);
+        | Error _ -> raise Cannot_retrieve_unix_stats);
     }
 
-  let update_modification_time_exn f path =
+  (** Update FileData modification time with argument value or get last system value *)
+  let update_modification_time_exn ?time f path =
     f.last_modification_time <-
-      (match get_modification_time path with
-      | Ok i -> i
-      | Error _ -> raise FileDataError)
+      (match time with
+      | Some t -> t
+      | None -> (
+          match get_modification_time path with
+          | Ok i -> i
+          | Error _ -> raise Cannot_retrieve_unix_stats))
 
   (** Returns true if the file has been modified. The internal last modification time is also updated.*)
   let has_been_modified_exn f path =
     match get_modification_time path with
     | Ok time ->
         let res = time - f.last_modification_time > 0 in
-        (* TODO - handle error *)
-        update_modification_time_exn f path;
+        update_modification_time_exn ~time f path;
         res
-    | Error _ -> raise FileDataError
+    | Error _ -> raise Cannot_retrieve_unix_stats
 end
 
 module Dir = struct
@@ -58,14 +62,17 @@ module Dir = struct
               match (Unix.lstat new_path).st_kind with
               | Unix.S_DIR ->
                   explore_tree (pred depth) new_path (* handles a subdir*)
-              | Unix.S_REG ->
-                  (* TODO - Handle error / better handling
-                     If fail, do not add *)
-                  Hashtbl.add files new_path (FileData.make_exn new_path)
+              | Unix.S_REG -> (
+                  try
+                    let file_data = FileData.make_exn new_path in
+                    Hashtbl.add files new_path file_data
+                  with Cannot_retrieve_unix_stats -> ())
               | _ -> () (* Do nothing *))
             (Sys.readdir cur_path)
       in
-      explore_tree max_depth path (* TODO - If fail, do not add *)
+      explore_tree max_depth path 
+    (* TODO - If fail, do not add *)
+    (* NOTE - Remove duplication, rework explore_tree f *)
     else Hashtbl.add files path (FileData.make_exn path);
     { path; files }
 
@@ -75,9 +82,9 @@ module Dir = struct
     let res =
       Hashtbl.fold
         (fun k_path f_data b ->
-          (* Handle FileDataError errors *)
+          (* Handle Cannot_retrieve_unix_stats errors *)
           try FileData.has_been_modified_exn f_data k_path || b
-          with FileDataError ->
+          with Cannot_retrieve_unix_stats ->
             Queue.push k_path to_remove_q;
             true || b)
         d.files false
