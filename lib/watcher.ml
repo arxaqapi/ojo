@@ -94,10 +94,8 @@ let watch_path path delay max_depth f =
   let d = Dir.make ~max_depth path in
   let rec watch_process () =
     Unix.sleepf delay;
-    if Dir.files_have_been_modified d then (
       (* execute function f if modifications detected *)
-      f ();
-      watch_process ())
-    else watch_process () (* no modification detected *)
+    if Dir.files_have_been_modified d then f ();
+    watch_process ()
   in
   watch_process ()
