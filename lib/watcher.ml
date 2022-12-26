@@ -2,7 +2,6 @@ open Utils
 
 exception Unix_stat_error
 exception Cannot_retrieve_unix_stats
-exception Not_Implemented
 
 let get_modification_time filename =
   try Ok (int_of_float (Unix.stat filename).st_mtime)
@@ -40,7 +39,6 @@ module FileData = struct
 end
 
 module Dir = struct
-  (* TODO - Error should be handled better (with Options or Results) *)
   type t = {
     path : string;
     (* path -> FileData.t *)
@@ -50,30 +48,22 @@ module Dir = struct
   (** Creates a Dir structure and populates its internal files corresponding to the [path] parameter *)
   let make ?(max_depth = 3) path =
     let files = Hashtbl.create 10 in
-    (* If we have a directory, recursively add all files to the Dir.files record field *)
-    (* NOTE: remove duplicate code *)
-    if Sys.is_directory path then
-      (* Recursively explore the file tree structure on disk *)
-      let rec explore_tree depth cur_path =
-        if depth > 0 then
-          Array.iter
-            (fun current_f ->
-              let new_path = cur_path ^ Filename.dir_sep ^ current_f in
-              match (Unix.lstat new_path).st_kind with
-              | Unix.S_DIR ->
-                  explore_tree (pred depth) new_path (* handles a subdir*)
-              | Unix.S_REG -> (
-                  try
-                    let file_data = FileData.make_exn new_path in
-                    Hashtbl.add files new_path file_data
-                  with Cannot_retrieve_unix_stats -> ())
-              | _ -> () (* Do nothing *))
-            (Sys.readdir cur_path)
-      in
-      explore_tree max_depth path 
-    (* TODO - If fail, do not add *)
-    (* NOTE - Remove duplication, rework explore_tree f *)
-    else Hashtbl.add files path (FileData.make_exn path);
+    let rec explore_tree depth cur_path =
+      if depth >= 0 then
+        match (Unix.lstat cur_path).st_kind with
+        | Unix.S_DIR ->
+            (* If dir, recursively explore files in dir *)
+            Array.iter
+              (fun sub_path ->
+                explore_tree (pred depth)
+                  (cur_path ^ Filename.dir_sep ^ sub_path))
+              (Sys.readdir cur_path)
+        | Unix.S_REG -> (
+            try Hashtbl.add files cur_path (FileData.make_exn cur_path)
+            with Cannot_retrieve_unix_stats -> ())
+        | _ -> () (* Do nothing *)
+    in
+    explore_tree max_depth path;
     { path; files }
 
   (** Loop over all files in the specified directory and return true if a modification has been detected *)
@@ -96,13 +86,13 @@ end
 
 (** Watch for modifications in a specific path (file or directory) *)
 let watch_path path delay max_depth f =
-  (* NOTE: remove duplicate code *)
   (match Sys.is_directory path with
   | true ->
       Rainbow.print Yellow @@ "Watching for modification in directory (depth="
       ^ string_of_int max_depth ^ "): " ^ path
   | false ->
       Rainbow.print Yellow @@ "Watching for modification in file: " ^ path);
+
   let d = Dir.make ~max_depth path in
   let rec watch_process () =
     Unix.sleepf delay;
