@@ -29,24 +29,27 @@ module FileData = struct
     match get_modification_time path with
     | Ok time ->
         let res = time - f.last_modification_time > 0 in
+        (* TODO - handle error *)
         update_modification_time_exn f path;
         res
     | Error _ -> raise FileDataError
 end
 
 module Dir = struct
+  (* TODO - Error should be handled better (with Options or Results) *)
   type t = {
     path : string;
     (* path -> FileData.t *)
     files : (string, FileData.t) Hashtbl.t;
   }
 
-  (** Creates a Dir structure and populates its internal list corresponding to the [path] parameter *)
+  (** Creates a Dir structure and populates its internal files corresponding to the [path] parameter *)
   let make ?(max_depth = 3) path =
     let files = Hashtbl.create 10 in
     (* If we have a directory, recursively add all files to the Dir.files record field *)
     (* NOTE: remove duplicate code *)
     if Sys.is_directory path then
+      (* Recursively explore the file tree structure on disk *)
       let rec explore_tree depth cur_path =
         if depth > 0 then
           Array.iter
@@ -56,11 +59,13 @@ module Dir = struct
               | Unix.S_DIR ->
                   explore_tree (pred depth) new_path (* handles a subdir*)
               | Unix.S_REG ->
+                  (* TODO - Handle error / better handling
+                     If fail, do not add *)
                   Hashtbl.add files new_path (FileData.make_exn new_path)
               | _ -> () (* Do nothing *))
             (Sys.readdir cur_path)
       in
-      explore_tree max_depth path
+      explore_tree max_depth path (* TODO - If fail, do not add *)
     else Hashtbl.add files path (FileData.make_exn path);
     { path; files }
 
@@ -94,7 +99,7 @@ let watch_path path delay max_depth f =
   let d = Dir.make ~max_depth path in
   let rec watch_process () =
     Unix.sleepf delay;
-      (* execute function f if modifications detected *)
+    (* execute function f if modifications are detected *)
     if Dir.files_have_been_modified d then f ();
     watch_process ()
   in
