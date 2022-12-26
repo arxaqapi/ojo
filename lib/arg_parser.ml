@@ -1,5 +1,5 @@
 let usage_message =
-  "ojo <file|directory> [-d delay_in_seconds] -x <\"command to execute\">"
+  "ojo <file|directory> [-d delay_in_seconds] [--depth max_depth] -x <\"command to execute\">"
 
 let delay = ref 2.0
 let max_depth = ref 3
