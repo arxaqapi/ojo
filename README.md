@@ -1,5 +1,8 @@
 # Ojo
 
+> 🚧 **Disclaimer:** This tool is still under heavy development and major changes in it's usage are still possible
+ 
+
 **Ojo** is a simple CLI tool that allows you to execute a specific command each time the specified file or directory is being modified.
 
 ## Usage
