@@ -17,8 +17,8 @@
 
 (package
  (name ojo)
- (synopsis "CLI tool to watch for change in the specified files.")
- (description "Ojo is a CLI toot that executes a given command each time a specified file or directory content is modified.")
+ (synopsis "CLI tool to watch for change in the specified files")
+ (description "Ojo is a CLI toot that executes a given command each time a specified file or directory content is modified")
  (depends (ocaml (>= 4.14)) dune)
  (tags
   ()))
