@@ -1,5 +1,5 @@
 open Ojo_lib
 
 let test_tree () =
-  let _dir = Watcher.Dir.make ~max_depth:1 "/home/aq" in
+  let _dir = Watcher.Dir.make ~max_depth:1 "." in
   Hashtbl.iter (fun k _v -> Printf.printf "\t%s\n" k) _dir.files
