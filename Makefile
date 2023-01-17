@@ -15,7 +15,7 @@ t test: b
 	dune test
 
 publish:
-	opam publish https://github.com/arxaqapi/$(EXECNAME)/archive/refs/tags/v0.2.0.tar.gz .
+	opam publish https://github.com/arxaqapi/$(EXECNAME)/archive/refs/tags/v0.2.1.tar.gz .
 
 .PHONY: c clean
 c clean:	
